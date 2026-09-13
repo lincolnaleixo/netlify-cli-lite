@@ -1,0 +1,15 @@
+{
+  "name": "netlify-cli-lite",
+  "version": "1.0.0",
+  "description": "Netlify sites, deploys, and environment metadata CLI.",
+  "type": "module",
+  "packageManager": "bun@1.4.0",
+  "bin": { "netlify-cli-lite": "./bin/netlify-cli-lite" },
+  "scripts": {
+    "check": "bun run typecheck && bun run test",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test src"
+  },
+  "devDependencies": { "@types/bun": "1.4.0", "typescript": "7.0.2" }
+}
+
