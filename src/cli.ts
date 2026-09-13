@@ -102,7 +102,7 @@ function requireConfirmation(
 export function usage(): string {
   return `Netlify site management (read-only inspection + guarded mutations)
 
-Usage: /home/robot/.local/bin/system-vault run netlify -- bun <skill-directory>/scripts/cli.ts <command> [args]
+Usage: netlify-cli-lite <command> [args]
 
 Commands:
   sites                         List all sites (domain · repo · last deploy · state)
@@ -121,10 +121,9 @@ branch context. Supported contexts: all, dev, dev-server, branch-deploy,
 deploy-preview, production, branch.
 
 Example (the value is not a command argument or output):
-  printf %s 'value' | /home/robot/.local/bin/system-vault run netlify -- bun <skill-directory>/scripts/cli.ts env-set mycalcexpert.com KEY --context production --confirm
+  printf %s 'value' | NETLIFY_TOKEN=your-token netlify-cli-lite env-set example.com KEY --context production --confirm
 
-All commands require the System Vault profile:
-  /home/robot/.local/bin/system-vault run netlify -- ...
+Set NETLIFY_TOKEN in the environment for every command that contacts Netlify.
 `;
 }
 
@@ -410,7 +409,7 @@ async function main(): Promise<void> {
           console.log(JSON.stringify({ id: build.id, deploy_id: build.deploy_id, done: build.done, sha: build.sha }, null, 2));
         } else {
           console.log(`${G}✓${X} build queued — id: ${build.id}${build.deploy_id ? `  deploy: ${build.deploy_id}` : ""}`);
-          console.log(`${DIM}Watch: /home/robot/.local/bin/system-vault run netlify -- bun <skill-directory>/scripts/cli.ts deploys ${site}${X}`);
+          console.log(`${DIM}Watch: netlify-cli-lite deploys ${site}${X}`);
         }
         return;
       }

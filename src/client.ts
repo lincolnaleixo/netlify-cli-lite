@@ -36,7 +36,7 @@ function loadConfig(): NetlifyConfig {
   const token = process.env.NETLIFY_TOKEN?.trim();
   if (!token) {
     throw new Error(
-      "Netlify credentials not found. Run through `/home/robot/.local/bin/system-vault run netlify --`.",
+      "Netlify credentials not found. Set NETLIFY_TOKEN in the environment before running this command.",
     );
   }
   return { token };

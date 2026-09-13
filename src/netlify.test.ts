@@ -5,17 +5,17 @@ import { assertAllowedFlags, formatEnvMutation, parseArgs, usage } from "./cli.t
 
 const site = {
   id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-  name: "mortgage-recast-calculator",
-  url: "https://mortgage-recast-calculator.netlify.app",
-  ssl_url: "https://mortgage-recast-calculator.netlify.app",
-  custom_domain: "mycalcexpert.com",
-  default_domain: "mortgage-recast-calculator.netlify.app",
-  domain_aliases: ["www.mycalcexpert.com"],
+  name: "example-site",
+  url: "https://example-site.netlify.app",
+  ssl_url: "https://example-site.netlify.app",
+  custom_domain: "example.com",
+  default_domain: "example-site.netlify.app",
+  domain_aliases: ["www.example.com"],
   state: "configured",
-  account_slug: "account-slug",
+  account_slug: "example-account",
   account_name: "test-account",
   build_settings: {
-    repo_url: "https://github.com/example/mortgage-recast-calculator",
+    repo_url: "https://github.com/example/example-site",
     repo_branch: "main",
     cmd: "bun run build",
     dir: "dist",
@@ -36,7 +36,7 @@ describe("Netlify client with mocked API", () => {
   test("covers paginated sites, exact resolution, deploys, deploy trigger, and env metadata", async () => {
     const previousToken = process.env.NETLIFY_TOKEN;
     const previousFetch = globalThis.fetch;
-    process.env.NETLIFY_TOKEN = "fixture-token";
+    process.env.NETLIFY_TOKEN = "test-token";
     const requests: { method: string; url: string }[] = [];
 
     globalThis.fetch = (async (input: string | URL, init?: RequestInit) => {
@@ -104,16 +104,16 @@ describe("Netlify client with mocked API", () => {
 
     try {
       await expect(netlify.listSites()).resolves.toHaveLength(1);
-      await expect(netlify.getSite("mycalcexpert.com")).resolves.toMatchObject({ id: site.id });
+      await expect(netlify.getSite("example.com")).resolves.toMatchObject({ id: site.id });
       await expect(netlify.listDeploys(site.id, 5)).resolves.toMatchObject([{ id: "deploy-2" }]);
       await expect(netlify.triggerDeploy(site.id, true)).resolves.toMatchObject({ id: "build-1" });
-      const mutation = await netlify.setEnvVarValue("mycalcexpert.com", "ANALYTICS_ID", {
+      const mutation = await netlify.setEnvVarValue("example.com", "ANALYTICS_ID", {
         context: "production",
         value: "DO_NOT_PRINT_NETLIFY_VALUE",
       });
       expect(mutation).toEqual({ key: "ANALYTICS_ID", context: "production", status: "configured" });
       expect(JSON.stringify(mutation)).not.toContain("DO_NOT_PRINT_NETLIFY_VALUE");
-      await expect(netlify.listEnv("mycalcexpert.com")).resolves.toMatchObject({
+      await expect(netlify.listEnv("example.com")).resolves.toMatchObject({
         site: { id: site.id },
         vars: [{ key: "DATABASE_URL" }],
       });
