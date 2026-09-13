@@ -128,7 +128,7 @@ describe("Netlify client with mocked API", () => {
   test("surfaces authentication failures without echoing bearer material", async () => {
     const previousToken = process.env.NETLIFY_TOKEN;
     const previousFetch = globalThis.fetch;
-    process.env.NETLIFY_TOKEN = "fixture-token";
+    process.env.NETLIFY_TOKEN = "test-token";
     globalThis.fetch = (async () =>
       new Response(JSON.stringify({ message: "authorization: Bearer DO_NOT_PRINT_NETLIFY_VALUE" }), {
         status: 401,
@@ -152,8 +152,8 @@ describe("Netlify client with mocked API", () => {
   test("redacts a mutation value if the API echoes it in an error", async () => {
     const previousToken = process.env.NETLIFY_TOKEN;
     const previousFetch = globalThis.fetch;
-    const secretValue = "DO_NOT_PRINT_MUTATION_VALUE";
-    process.env.NETLIFY_TOKEN = "fixture-token";
+    const secretValue = "test-mutation-value";
+    process.env.NETLIFY_TOKEN = "test-token";
     globalThis.fetch = (async (input: string | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.includes("/sites?") && url.includes("page=1")) {
@@ -170,13 +170,13 @@ describe("Netlify client with mocked API", () => {
     }) as unknown as typeof fetch;
     try {
       await expect(
-        netlify.setEnvVarValue("mycalcexpert.com", "ANALYTICS_ID", {
+        netlify.setEnvVarValue("example.com", "ANALYTICS_ID", {
           context: "production",
           value: secretValue,
         }),
       ).rejects.toThrow(/\[redacted\]/);
       try {
-        await netlify.setEnvVarValue("mycalcexpert.com", "ANALYTICS_ID", {
+        await netlify.setEnvVarValue("example.com", "ANALYTICS_ID", {
           context: "production",
           value: secretValue,
         });
@@ -193,7 +193,7 @@ describe("Netlify client with mocked API", () => {
   test("creates a missing key with one contextual value after a PATCH 404", async () => {
     const previousToken = process.env.NETLIFY_TOKEN;
     const previousFetch = globalThis.fetch;
-    process.env.NETLIFY_TOKEN = "fixture-token";
+    process.env.NETLIFY_TOKEN = "test-token";
     const methods: string[] = [];
     globalThis.fetch = (async (input: string | URL, init?: RequestInit) => {
       const url = String(input);
@@ -207,16 +207,16 @@ describe("Netlify client with mocked API", () => {
       if (url.includes(`/accounts/${site.account_slug}/env?site_id=${site.id}`)) {
         expect(init?.method).toBe("POST");
         expect(JSON.parse(String(init?.body))).toEqual([
-          { key: "NEW_KEY", values: [{ context: "deploy-preview", value: "DO_NOT_PRINT_NEW_VALUE" }] },
+          { key: "NEW_KEY", values: [{ context: "deploy-preview", value: "test-new-value" }] },
         ]);
         return new Response(JSON.stringify([{ key: "NEW_KEY" }]), { status: 201 });
       }
       return new Response("not found", { status: 404, statusText: "Not Found" });
     }) as unknown as typeof fetch;
     try {
-      const mutation = await netlify.setEnvVarValue("mycalcexpert.com", "NEW_KEY", {
+      const mutation = await netlify.setEnvVarValue("example.com", "NEW_KEY", {
         context: "deploy-preview",
-        value: "DO_NOT_PRINT_NEW_VALUE",
+        value: "test-new-value",
       });
       expect(mutation).toEqual({ key: "NEW_KEY", context: "deploy-preview", status: "configured" });
       expect(methods.some((method) => method.startsWith("PATCH "))).toBe(true);
@@ -231,7 +231,7 @@ describe("Netlify client with mocked API", () => {
   test("sends the custom branch parameter only to the branch context", async () => {
     const previousToken = process.env.NETLIFY_TOKEN;
     const previousFetch = globalThis.fetch;
-    process.env.NETLIFY_TOKEN = "fixture-token";
+    process.env.NETLIFY_TOKEN = "test-token";
     globalThis.fetch = (async (input: string | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.includes("/sites?") && url.includes("page=1")) {
@@ -242,7 +242,7 @@ describe("Netlify client with mocked API", () => {
         expect(JSON.parse(String(init?.body))).toEqual({
           context: "branch",
           context_parameter: "staging",
-          value: "DO_NOT_PRINT_BRANCH_VALUE",
+          value: "test-branch-value",
         });
         return new Response(JSON.stringify({ key: "BRANCH_KEY" }), { status: 201 });
       }
@@ -250,10 +250,10 @@ describe("Netlify client with mocked API", () => {
     }) as unknown as typeof fetch;
     try {
       await expect(
-        netlify.setEnvVarValue("mycalcexpert.com", "BRANCH_KEY", {
+        netlify.setEnvVarValue("example.com", "BRANCH_KEY", {
           context: "branch",
           contextParameter: "staging",
-          value: "DO_NOT_PRINT_BRANCH_VALUE",
+          value: "test-branch-value",
         }),
       ).resolves.toEqual({
         key: "BRANCH_KEY",
@@ -289,7 +289,7 @@ describe("Netlify client with mocked API", () => {
     const previousToken = process.env.NETLIFY_TOKEN;
     delete process.env.NETLIFY_TOKEN;
     try {
-      await expect(netlify.listSites()).rejects.toThrow("system-vault run netlify");
+      await expect(netlify.listSites()).rejects.toThrow("Set NETLIFY_TOKEN");
     } finally {
       if (previousToken === undefined) delete process.env.NETLIFY_TOKEN;
       else process.env.NETLIFY_TOKEN = previousToken;
@@ -299,16 +299,16 @@ describe("Netlify client with mocked API", () => {
 
 describe("Netlify CLI safety boundary", () => {
   test("accepts only the documented flags and rejects env-value reveal attempts", () => {
-    expect(parseArgs(["deploy", "mycalcexpert.com", "--clear", "--confirm"])).toEqual({
-      positional: ["deploy", "mycalcexpert.com"],
+    expect(parseArgs(["deploy", "example.com", "--clear", "--confirm"])).toEqual({
+      positional: ["deploy", "example.com"],
       flags: { clear: true, confirm: true },
     });
-    expect(parseArgs(["deploys", "mycalcexpert.com", "--limit", "5", "--json"])).toEqual({
-      positional: ["deploys", "mycalcexpert.com"],
+    expect(parseArgs(["deploys", "example.com", "--limit", "5", "--json"])).toEqual({
+      positional: ["deploys", "example.com"],
       flags: { limit: "5", json: true },
     });
-    expect(parseArgs(["env-set", "mycalcexpert.com", "ANALYTICS_ID", "--context", "production", "--confirm", "--json"])).toEqual({
-      positional: ["env-set", "mycalcexpert.com", "ANALYTICS_ID"],
+    expect(parseArgs(["env-set", "example.com", "ANALYTICS_ID", "--context", "production", "--confirm", "--json"])).toEqual({
+      positional: ["env-set", "example.com", "ANALYTICS_ID"],
       flags: { context: "production", confirm: true, json: true },
     });
     expect(() => assertAllowedFlags("env", { values: true })).toThrow("unknown flag for env: --values");
@@ -321,7 +321,7 @@ describe("Netlify CLI safety boundary", () => {
 
   test("rejects duplicate flags and invalid values before making a request", () => {
     expect(() => parseArgs(["sites", "--json", "--json"])).toThrow("duplicate flag");
-    expect(() => parseArgs(["deploys", "mycalcexpert.com", "--limit"])).toThrow("requires a value");
+    expect(() => parseArgs(["deploys", "example.com", "--limit"])).toThrow("requires a value");
     expect(() => assertAllowedFlags("deploy", { values: true })).toThrow("unknown flag");
     expect(() => parseArgs(["env-set", "site", "KEY", "--context", "production", "--context", "dev"])).toThrow(
       "duplicate flag",
@@ -350,17 +350,17 @@ describe("Netlify CLI safety boundary", () => {
         "bun",
         join(import.meta.dir, "cli.ts"),
         "env-set",
-        "mycalcexpert.com",
+        "example.com",
         "ANALYTICS_ID",
         "--context",
         "production",
       ],
-      { stdin: new Blob(["DO_NOT_PRINT_CLI_VALUE"]), stdout: "pipe", stderr: "pipe" },
+      { stdin: new Blob(["test-cli-value"]), stdout: "pipe", stderr: "pipe" },
     );
     expect(result.exitCode).toBe(1);
     expect(result.stderr.toString()).toContain("environment state");
     expect(result.stderr.toString()).toContain("--confirm");
-    expect(result.stderr.toString()).not.toContain("DO_NOT_PRINT_CLI_VALUE");
+    expect(result.stderr.toString()).not.toContain("test-cli-value");
   });
 
   test("masks every environment value in the safe projection", async () => {
@@ -369,9 +369,9 @@ describe("Netlify CLI safety boundary", () => {
       key: "DATABASE_URL",
       scopes: ["builds"],
       is_secret: true,
-      values: [{ context: "production", value: "DO_NOT_PRINT_NETLIFY_VALUE" }],
+      values: [{ context: "production", value: "test-api-value" }],
     });
-    expect(JSON.stringify(masked)).not.toContain("DO_NOT_PRINT_NETLIFY_VALUE");
+    expect(JSON.stringify(masked)).not.toContain("test-api-value");
     expect(masked.values).toEqual([{ context: "production", value: "[masked]" }]);
   });
 });
